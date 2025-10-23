@@ -1,0 +1,8 @@
+{
+  "key": "6298f2",
+  "parameters": "",
+  "use_fahrenheit": false,
+  "only_icon": true,
+  "icon_pos": "right",
+  "url": "http://api.weatherapi.com/v1/current.json"
+}
