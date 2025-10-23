@@ -79,7 +79,7 @@ func getWeather() ([]byte, error) {
 	}
 
 	if err = json.Unmarshal(jsonBytes, &settings); err != nil {
-		slog.Error("Couldn't unmarshal the settings", slog.String("path", *settingsPath))
+		slog.Error("Couldn't decode settings", slog.String("path", *settingsPath))
 		return nil, err
 	}
 
@@ -95,8 +95,7 @@ func getWeather() ([]byte, error) {
 		Param("q", settings.Parameters).
 		ToJSON(&weather).
 		Fetch(context.Background()); err != nil {
-		err = fmt.Errorf("[requests.Fetch]: %w", err)
-		slog.Error("WeatherAPI", slog.String("%s", settings.URL), slog.String("%s", settings.Parameters))
+		slog.Error("WeatherAPI request failed", slog.String("%s", settings.URL), slog.String("%s", settings.Parameters))
 		return nil, err
 	}
 
@@ -131,7 +130,7 @@ func getWeather() ([]byte, error) {
 	}
 
 	if jsonBytes, err = json.Marshal(wr); err != nil {
-		slog.Error("Couldn't marshal json", slog.String("text", wr.Text), slog.String("tooltip", wr.Tooltip))
+		slog.Error("Couldn't encode json", slog.String("text", wr.Text), slog.String("tooltip", wr.Tooltip))
 		return nil, err
 	}
 
