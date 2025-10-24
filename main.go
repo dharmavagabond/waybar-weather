@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"math"
 	"os"
@@ -20,7 +19,7 @@ import (
 	"github.com/ybbus/httpretry"
 )
 
-type WeatherSettings struct {
+type Settings struct {
 	Key           string `json:"key"`
 	UseFahrenheit bool   `json:"use_fahrenheit"`
 	IconPos       string `json:"icon_pos"`
@@ -30,7 +29,7 @@ type WeatherSettings struct {
 	Unit          string
 }
 
-type WeatherResponse struct {
+type APIResponse struct {
 	Current struct {
 		IsDay     int     `json:"is_day"`
 		TempC     float64 `json:"temp_c"`
@@ -55,7 +54,8 @@ func init() {
 func main() {
 	jsonBytes, err := getWeather()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to fetch current weather", "error", err)
+		os.Exit(1)
 	}
 
 	fmt.Print(string(jsonBytes))
@@ -63,8 +63,8 @@ func main() {
 
 func getWeather() ([]byte, error) {
 	var (
-		settings  *WeatherSettings
-		weather   WeatherResponse
+		settings  *Settings
+		weather   APIResponse
 		jsonBytes []byte
 		err       error
 	)
@@ -79,7 +79,7 @@ func getWeather() ([]byte, error) {
 	}
 
 	if err = json.Unmarshal(jsonBytes, &settings); err != nil {
-		slog.Error("Couldn't decode settings", slog.String("path", *settingsPath))
+		slog.Error("Couldn't decode settings")
 		return nil, err
 	}
 
@@ -89,13 +89,26 @@ func getWeather() ([]byte, error) {
 		settings.Unit = "°F"
 	}
 
+	if settings.URL == "" || settings.Key == "" || settings.Parameters == "" {
+		slog.Error("Empty required settings",
+			slog.String("url", settings.URL),
+			slog.String("key", settings.Key),
+			slog.String("parameters", settings.Parameters),
+		)
+		return nil, errors.New("empty required settings")
+	}
+
 	if err = requests.URL(settings.URL).
 		Client(cl).
 		Param("key", settings.Key).
 		Param("q", settings.Parameters).
 		ToJSON(&weather).
 		Fetch(context.Background()); err != nil {
-		slog.Error("WeatherAPI request failed", slog.String("%s", settings.URL), slog.String("%s", settings.Parameters))
+		slog.Error("WeatherAPI request failed",
+			slog.String("%s", settings.URL),
+			slog.String("%s", settings.Parameters),
+		)
+
 		return nil, err
 	}
 
@@ -130,14 +143,17 @@ func getWeather() ([]byte, error) {
 	}
 
 	if jsonBytes, err = json.Marshal(wr); err != nil {
-		slog.Error("Couldn't encode json", slog.String("text", wr.Text), slog.String("tooltip", wr.Tooltip))
+		slog.Error("Couldn't encode json",
+			slog.String("text", wr.Text),
+			slog.String("tooltip", wr.Tooltip),
+		)
 		return nil, err
 	}
 
 	return jsonBytes, nil
 }
 
-func getIcon(icons []byte, weather *WeatherResponse) string {
+func getIcon(icons []byte, weather *APIResponse) string {
 	condition := strings.ToLower(weather.Current.Condition.Text)
 	obj := gjson.GetBytes(icons, fmt.Sprintf("#(day==%s)", condition))
 
