@@ -12,7 +12,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/carlmjohnson/requests"
 	"github.com/tidwall/gjson"
@@ -35,7 +34,7 @@ type APIResponse struct {
 		TempC     float64 `json:"temp_c"`
 		TempF     float64 `json:"temp_f"`
 		Condition struct {
-			Text string `json:"text"`
+			Code int `json:"code"`
 		} `json:"condition"`
 	} `json:"current"`
 }
@@ -154,20 +153,17 @@ func getWeather() ([]byte, error) {
 }
 
 func getIcon(icons []byte, weather *APIResponse) string {
-	condition := strings.ToLower(weather.Current.Condition.Text)
-	obj := gjson.GetBytes(icons, fmt.Sprintf("#(day==%s)", condition))
-
-	if !obj.Exists() {
-		return ""
-	}
-
+	code := weather.Current.Condition.Code
 	iconKey := "icon"
 
 	if weather.Current.IsDay == 0 {
 		iconKey = "icon_night"
 	}
 
-	return obj.Get(iconKey).String()
+	query := fmt.Sprintf("#(code==%d).%s", code, iconKey)
+	icon := gjson.GetBytes(icons, query)
+
+	return icon.String()
 }
 
 func readJSONFile(f string) ([]byte, error) {
