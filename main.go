@@ -89,12 +89,7 @@ func getWeather() ([]byte, error) {
 	}
 
 	if settings.URL == "" || settings.Key == "" || settings.Parameters == "" {
-		slog.Error("Empty required settings",
-			slog.String("url", settings.URL),
-			slog.String("key", settings.Key),
-			slog.String("parameters", settings.Parameters),
-		)
-		return nil, errors.New("empty required settings")
+		return nil, errors.New("missing required settings")
 	}
 
 	if err = requests.URL(settings.URL).
@@ -103,11 +98,6 @@ func getWeather() ([]byte, error) {
 		Param("q", settings.Parameters).
 		ToJSON(&weather).
 		Fetch(context.Background()); err != nil {
-		slog.Error("WeatherAPI request failed",
-			slog.String("%s", settings.URL),
-			slog.String("%s", settings.Parameters),
-		)
-
 		return nil, err
 	}
 
