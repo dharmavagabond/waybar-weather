@@ -108,7 +108,7 @@ func getWeather() ([]byte, error) {
 		return nil, err
 	}
 
-	icon := getIcon(jsonBytes, &weather)
+	icon := getIcon(jsonBytes, weather.Current.Condition.Code, weather.Current.IsDay)
 	temp := weather.Current.TempC
 
 	if settings.Unit == "°F" {
@@ -142,11 +142,10 @@ func getWeather() ([]byte, error) {
 	return jsonBytes, nil
 }
 
-func getIcon(icons []byte, weather *APIResponse) string {
-	code := weather.Current.Condition.Code
+func getIcon(icons []byte, code, isDay int) string {
 	iconKey := "icon"
 
-	if weather.Current.IsDay == 0 {
+	if isDay == 0 {
 		iconKey = "icon_night"
 	}
 
