@@ -111,7 +111,7 @@ func getWeather() ([]byte, error) {
 	icon := getIcon(jsonBytes, weather.Current.Condition.Code, weather.Current.IsDay)
 	temp := weather.Current.TempC
 
-	if settings.Unit == "°F" {
+	if settings.UseFahrenheit {
 		temp = weather.Current.TempF
 	}
 
